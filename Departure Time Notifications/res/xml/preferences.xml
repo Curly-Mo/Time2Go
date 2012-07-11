@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    			xmlns:curlymoprefs="http://schemas.android.com/apk/res/com.curlymo.departurenotifications">	
+    				
+        <PreferenceCategory
+                android:title="Main">
+			<CheckBoxPreference
+				android:title="Time2Go Notifications"
+				android:defaultValue="false"
+				android:summaryOn="Notifications are On"
+				android:summaryOff="Notifications are off"
+				android:key="onOffSwitch" /> 
+		</PreferenceCategory>
+        <PreferenceCategory
+                android:title="Options">           
+	        <ListPreference
+	            android:title="Travel Mode"
+	            android:summary="Choose how travel time is calculated"
+	            android:key="travelMode"
+	            android:defaultValue="driving"
+	            android:entries="@array/travelModeArray"
+	            android:entryValues="@array/travelModeValues" />
+	  	    <ListPreference
+	            android:title="Warning Time"
+	            android:summary="How long before it is time to leave do you want a notification"
+	            android:key="warningTime"
+	            android:defaultValue="300000"
+	            android:entries="@array/warningTimeArray"
+	            android:entryValues="@array/warningTimeValues" />
+	  	    <CheckBoxPreference
+				android:title="Display 24 Hour Time"
+				android:defaultValue="true"
+				android:summaryOn="Now displaying 24 hour time"
+				android:summaryOff="Now displaying 12 hour time"
+				android:key="display24Hour" /> 
+			<com.curlymo.departurenotifications.ListPreferenceMultiSelect
+	            android:title="Select Calendars"
+	            android:dialogTitle="Select Calendars"
+	            android:summary="Turn notifications on for these Calendars"
+	            android:key="calendars"
+	            android:defaultValue="totallyawesomedefaultstring"	
+	            android:entries="@array/warningTimeArray"
+	            android:entryValues="@array/warningTimeValues"
+	            curlymoprefs:checkAll="check" 
+	            curlymoprefs:separator="|"  />  
+	         <ListPreference
+	            android:title="Events With No Location"
+	            android:summary="If an event has no location, when do you want a notification"
+	            android:key="noLocationWarningTime"
+	            android:defaultValue="0"
+	            android:entries="@array/noLocationArray"
+	            android:entryValues="@array/noLocationValues" />
+        </PreferenceCategory>
+        <PreferenceCategory android:title="Sounds">
+             <RingtonePreference
+                android:name="Ringtone Preference"
+                android:summary="Select notification ringtone"
+                android:title="Ringtone"
+                android:key="ringtone"
+                android:defaultValue="content://settings/system/notification_sound"
+                android:showDefault="true"
+                android:showSilent="true"
+                android:ringtoneType="notification" />
+             <ListPreference
+	            android:title="Vibrate Pattern"
+	            android:summary="Change notification vibration pattern"
+	            android:key="vibrate"
+	            android:defaultValue="default"
+	            android:entries="@array/vibrateArray"
+	            android:entryValues="@array/vibrateValues" />
+        </PreferenceCategory>
+    
+        
+</PreferenceScreen>
