@@ -266,7 +266,7 @@ private static String convertStreamToString(InputStream is) {
 }
 
 
-private List<Event> getEvents(){
+private List<Event> getEvents(Location phoneLoc){
 	SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
 	String[] calendarArray = ListPreferenceMultiSelect.parseStoredValue(prefs.getString("calendars", ""));
 	List<String> selectedCalendars;
@@ -341,7 +341,8 @@ private List<Event> getEvents(){
 	        while (location!=null && addressList == null && responseCount <= RESPONSE_LIMIT) {
 	            try {
 	              // populate address list from query and return
-	                addressList = myGeocoder.getFromLocationName(location, 1);
+	                addressList = myGeocoder.getFromLocationName(location, 1, 
+	                		phoneLoc.getLatitude()-.45, phoneLoc.getLongitude()-.45,phoneLoc.getLatitude()+.45, phoneLoc.getLongitude()+.45);
 	            } catch (SocketTimeoutException e) {
 	                addressList = null;
 	            }  catch (IOException e) {
@@ -378,7 +379,7 @@ class myLocationListener implements LocationListener{
 		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
 		long WarningTime = Long.parseLong(prefs.getString("warningTime", String.valueOf(Constants.FIVE_MINUTES)));
 		long NoLocationWarningTime = Long.parseLong(prefs.getString("noLocationWarningTime", String.valueOf(0)));
-		List<Event> events = getEvents();
+		List<Event> events = getEvents(location);
     	String geoFrom = location.getLatitude() + "," + location.getLongitude();
 
         for(Event event : events){

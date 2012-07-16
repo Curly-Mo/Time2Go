@@ -13,7 +13,9 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.SystemClock;
+import android.os.Vibrator;
 import android.preference.Preference;
+import android.preference.Preference.OnPreferenceChangeListener;
 import android.preference.Preference.OnPreferenceClickListener;
 import android.preference.PreferenceActivity;
 import android.provider.CalendarContract;
@@ -27,15 +29,16 @@ public class SettingsActivity extends PreferenceActivity {
                 
                 setCalendarPreference();
 
-                final Preference myPref = (Preference) findPreference("onOffSwitch");
+                final Preference switchPref = (Preference) findPreference("onOffSwitch");
+                final Preference vibratePref = (Preference) findPreference("vibrate");
                 
-                if(myPref.getSharedPreferences().getBoolean("onOffSwitch", false)){
+                if(switchPref.getSharedPreferences().getBoolean("onOffSwitch", false)){
                 	scheduleAlarmReceiver();
                 }
                 
-                myPref.setOnPreferenceClickListener(new OnPreferenceClickListener() {
+                switchPref.setOnPreferenceClickListener(new OnPreferenceClickListener() {
                              public boolean onPreferenceClick(Preference preference) {
-                                 if(!myPref.getSharedPreferences().getBoolean("onOffSwitch", true)){
+                                 if(!switchPref.getSharedPreferences().getBoolean("onOffSwitch", true)){
                                 	 System.out.println("turned off");
 
                                      PendingIntent pendingIntent =
@@ -51,6 +54,36 @@ public class SettingsActivity extends PreferenceActivity {
 								return true;
                              }
                          });
+                
+                vibratePref.setOnPreferenceChangeListener(new OnPreferenceChangeListener() {
+                    public boolean onPreferenceChange(Preference preference, Object newValue) {
+                    	Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+
+                		if(newValue.equals("default")){
+                			//notification.defaults |= Notification.DEFAULT_VIBRATE;
+                		}else if(newValue.equals("long")){
+                			long[] pattern = {0,600};
+                			v.vibrate(pattern, -1);
+                		}else if(newValue.equals("short")){
+                			long[] pattern = {0, 200};
+                			v.vibrate(pattern, -1);
+                		}else if(newValue.equals("shortshortshort")){
+                			long[] pattern = {0, 150, 75, 150, 75, 150};
+                			v.vibrate(pattern, -1);
+                		}else if(newValue.equals("pattern")){
+                			long[] pattern = {0, 250, 200, 250, 150, 150, 75, 150, 75, 150};
+                			v.vibrate(pattern, -1);
+                		}else if(newValue.equals("twobits")){
+                			long[] pattern = {0,100,200,100,100,100,100,100,200,100,500,100,225, 100};
+                			v.vibrate(pattern, -1);
+                		}else if(newValue.equals("victory")){
+                			long[] pattern = {0,50,100,50,100,50,100,400,100,300,100,350,50,200 ,100,100,50,600};
+                			v.vibrate(pattern, -1);
+                		}
+
+                		return true;
+                    }
+                });
                 
         }
         
