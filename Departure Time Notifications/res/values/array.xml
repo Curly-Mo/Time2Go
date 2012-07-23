@@ -4,11 +4,13 @@
    <item>Driving</item>
    <item>Biking</item>
    <item>Walking</item>
+   <item>Public Transit</item>
 </string-array> 
 <string-array name="travelModeValues">
    <item>driving</item>
    <item>bicycling </item>
    <item>walking</item>
+   <item>transit</item>
 </string-array>
 
 <string-array name="warningTimeArray">

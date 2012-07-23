@@ -17,6 +17,7 @@ import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -199,8 +200,19 @@ public String getDisplayString(Event event, Date departureTime){
 
 
 
-public int getEstimate(String from, String to){
-	int duration;
+public long getEstimate(String from, String to, Event event){
+	long duration;
+	String mode = PreferenceManager.getDefaultSharedPreferences(getBaseContext()).getString("travelMode", "driving");	
+	if(event.title.contains("-transit")){
+		mode = "transit";
+	}else if(event.title.contains("-driving")||event.title.contains("-drive")){
+		mode = "driving";
+	}else if(event.title.contains("-bicycling") ||event.title.contains("-biking")||event.title.contains("-bike")){
+		mode = "bicycling";
+	}else if(event.title.contains("-walking")||event.title.contains("-walk")){
+		mode = "walking";
+	}
+
 	StringBuilder urlString = new StringBuilder();
 	urlString.append("http://maps.google.com/maps/api/directions/json?");
 	urlString.append("origin=");//from
@@ -208,7 +220,12 @@ public int getEstimate(String from, String to){
 	urlString.append("&destination=");//to
 	urlString.append(to);
 	urlString.append("&mode=");//to
-	urlString.append(PreferenceManager.getDefaultSharedPreferences(getBaseContext()).getString("travelMode", "driving"));
+	urlString.append(mode);
+	if(mode.equals("transit")){
+		urlString.append("&arrivalTime=");//arrivalTime for Transit directions"
+		urlString.append(event.startTime.getTime()/1000);//seconds since midnight, January 1, 1970 UTC
+		event.setTransit(true);
+	}
 	urlString.append("&sensor=false");
 	HttpClient httpclient = new DefaultHttpClient();
     HttpGet httpget = new HttpGet(urlString.toString());
@@ -222,11 +239,27 @@ public int getEstimate(String from, String to){
 		try {
 			jsonObject = new JSONObject(content);// parse response into json object
             JSONObject routeObject = jsonObject.getJSONArray("routes").getJSONObject(0); // pull out the "route" object
-            JSONObject legObject = routeObject.getJSONArray("legs").getJSONObject(0);
-            JSONObject durationObject = legObject.getJSONObject("duration"); // pull out the "duration" object
-
+            JSONArray legArray = routeObject.getJSONArray("legs");
+            JSONObject firstLegObject = legArray.getJSONObject(0);
+            JSONObject durationObject = firstLegObject.getJSONObject("duration"); // pull out the "duration" object
+            
+            
             String durationString = durationObject.getString("value");
-            duration = Integer.valueOf(durationString);
+            duration = Long.valueOf(durationString);
+            
+            if(event.isTransit){
+                JSONObject departObject = firstLegObject.getJSONObject("departure_time"); // pull out the departure time of transit directions
+                String departString = departObject.getString("value");
+                long departure = Long.valueOf(departString);
+                event.setDepartureTime(new Date(departure*1000));
+                
+                //JSONObject lastLegObject = legArray.getJSONObject(legArray.length() - 1);
+                //JSONObject arriveObject = lastLegObject.getJSONObject("arrival_time"); // pull out the departure time of transit directions
+                //String arriveString = arriveObject.getString("value");
+                //long arrival = Long.valueOf(arriveString);
+                //duration = arrival - departure;
+            }
+            
 		} catch (JSONException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -387,7 +420,7 @@ class myLocationListener implements LocationListener{
         	if(event.location!=null){
         		
 	        	String geoTo = event.location.getLatitude() + "," + event.location.getLongitude();
-	            estimatedTime = getEstimate(geoFrom,geoTo);
+	            estimatedTime = getEstimate(geoFrom,geoTo, event);
 	            event.setEstimate(estimatedTime);
         	}  
         	else{
@@ -403,10 +436,17 @@ class myLocationListener implements LocationListener{
         	}
         	
 	            Date now = new Date();
-	            long timeUntil = (event.startTime.getTime() - now.getTime());
-	            long timeUntilDeparture = (timeUntil - estimatedTime*1000);
-	            Date departureTime = new Date(event.startTime.getTime() - estimatedTime*1000);	
-
+	            long timeUntilDeparture;
+	            Date departureTime;
+	            if(event.isTransit){
+	            	departureTime = event.departureTime;
+	            	timeUntilDeparture = departureTime.getTime() - now.getTime();
+	            }else{
+	            
+		            long timeUntil = (event.startTime.getTime() - now.getTime());
+		            timeUntilDeparture = (timeUntil - estimatedTime*1000);
+		            departureTime = new Date(event.startTime.getTime() - estimatedTime*1000);	
+	            }
 	            
 	            if(timeUntilDeparture > 0){
 		            if(timeUntilDeparture <= WarningTime + Constants.MINUTE){
@@ -425,7 +465,7 @@ class myLocationListener implements LocationListener{
 	        		if(pref.contains(event.uniqueID))
 	        			pref.edit().remove(event.uniqueID).commit();
 	            }
-        		//createNotification(event, getDisplayString(event,departureTime));
+        		createNotification(event, getDisplayString(event,departureTime));
 
 	            System.out.println(event.title + ": estimate=" +estimatedTime + " timeUntil=" + (event.startTime.getTime() - now.getTime()));
 	            System.out.println("TimeUntilDeparture: " + timeUntilDeparture);
