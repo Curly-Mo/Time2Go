@@ -2,8 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.curlymo.departurenotifications"
     android:installLocation="internalOnly"
-    android:versionCode="9"
-    android:versionName="1.09" >
+    android:versionCode="11"
+    android:versionName="1.11" >
 
     <uses-sdk android:minSdkVersion="8" android:targetSdkVersion="8"/>
     
@@ -13,6 +13,7 @@
        <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
        <uses-permission android:name="android.permission.VIBRATE" />
        <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+       <uses-permission android:name="android.permission.READ_CONTACTS"/>
        
        
 

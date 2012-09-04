@@ -45,6 +45,8 @@ import android.os.Looper;
 import android.os.SystemClock;
 import android.preference.PreferenceManager;
 import android.provider.CalendarContract;
+import android.provider.ContactsContract;
+import android.provider.ContactsContract.CommonDataKinds.Phone;
 import android.text.format.DateUtils;
 import android.widget.RemoteViews;
 
@@ -222,7 +224,7 @@ public long getEstimate(String from, String to, Event event){
 	urlString.append("&mode=");//to
 	urlString.append(mode);
 	if(mode.equals("transit")){
-		urlString.append("&arrivalTime=");//arrivalTime for Transit directions"
+		urlString.append("&arrival_time=");//arrivalTime for Transit directions"
 		urlString.append(event.startTime.getTime()/1000);//seconds since midnight, January 1, 1970 UTC
 		event.setTransit(true);
 	}
@@ -346,7 +348,7 @@ private List<Event> getEvents(Location phoneLoc){
 		}
 		long now = new Date().getTime();
 		ContentUris.appendId(builder, now);
-		ContentUris.appendId(builder, now + 3* DateUtils.DAY_IN_MILLIS);
+		ContentUris.appendId(builder, now + 2* DateUtils.DAY_IN_MILLIS);
 
 		Cursor eventCursor;
 		if (Build.VERSION.SDK_INT >= 14) {
@@ -388,7 +390,7 @@ private List<Event> getEvents(Location phoneLoc){
 	            }
 	        }
 	        if(addressList==null ||addressList.isEmpty()){
-	        	
+	        	address = getAddressFromContacts(title);
 	        }else{
 	        	address = addressList.get(0);
 	        	location = address.toString();
@@ -400,6 +402,56 @@ private List<Event> getEvents(Location phoneLoc){
 	}
 	
 	return events;
+}
+
+private Address getAddressFromContacts(String title){
+	System.out.println("Searching contacts for: "+title);
+
+    Uri uri = ContactsContract.Data.CONTENT_URI;
+    String[] projection    = new String[] {ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
+                    //ContactsContract.CommonDataKinds.StructuredPostal.FORMATTED_ADDRESS,
+                    ContactsContract.CommonDataKinds.StructuredPostal.STREET,
+                    ContactsContract.CommonDataKinds.StructuredPostal.CITY,
+                    ContactsContract.CommonDataKinds.StructuredPostal.POSTCODE};
+
+    Cursor people = getContentResolver().query(uri, projection, null, null, Phone.DISPLAY_NAME + " ASC");
+   
+    if(people!=null){
+        int indexName = people.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME);
+        //int indexAddress = people.getColumnIndex(ContactsContract.CommonDataKinds.StructuredPostal.FORMATTED_ADDRESS);
+        int indexStreet = people.getColumnIndex(ContactsContract.CommonDataKinds.StructuredPostal.STREET);
+        int indexCity = people.getColumnIndex(ContactsContract.CommonDataKinds.StructuredPostal.CITY);
+        int indexPostcode = people.getColumnIndex(ContactsContract.CommonDataKinds.StructuredPostal.POSTCODE);
+
+    	while (people.moveToNext()) {
+            String contactName   = people.getString(indexName);
+            //String contactAddressString  = people.getString(indexAddress);
+            String contactStreet  = people.getString(indexStreet);
+            String contactCity  = people.getString(indexCity);
+            String contactPostcode  = people.getString(indexPostcode);
+            
+            //if(contactName!=null){System.out.println(contactName);}
+            if((contactStreet!=null&&(contactCity!=null||contactPostcode!=null))
+            		&&contactName!=null && title.contains(contactName)){
+        		System.out.println("Found match: " + contactName);
+	            System.out.println(contactStreet+" "+contactCity+" "+contactPostcode);
+	    		Geocoder geocoder = new Geocoder(this, Locale.getDefault());
+	    		Address contactAddress;
+	    		try {
+	    			List<Address> addresses = geocoder.getFromLocationName(contactStreet+" "+contactCity+" "+contactPostcode, 1);
+	    			if(!addresses.isEmpty()){
+		    			contactAddress = addresses.iterator().next();
+			            return contactAddress;
+	    			}
+
+	    		} catch (IOException e) {
+	    		}
+            }
+            
+    	}
+    }
+	
+	return null;
 }
 
 
@@ -465,7 +517,7 @@ class myLocationListener implements LocationListener{
 	        		if(pref.contains(event.uniqueID))
 	        			pref.edit().remove(event.uniqueID).commit();
 	            }
-        		createNotification(event, getDisplayString(event,departureTime));
+        		//createNotification(event, getDisplayString(event,departureTime));
 
 	            System.out.println(event.title + ": estimate=" +estimatedTime + " timeUntil=" + (event.startTime.getTime() - now.getTime()));
 	            System.out.println("TimeUntilDeparture: " + timeUntilDeparture);
